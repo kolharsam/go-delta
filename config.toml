@@ -1,0 +1,20 @@
+title = "go-delta"
+
+[ring-leader]
+task_queue_size = 1024
+
+[ring-leader.connections]
+max_retries = 10
+time_between_retries = 4
+
+[bloom]
+bits = 1000
+num_hash_functions = 3
+
+[worker]
+heartbeat_interval = 2
+backoff_max = 2        # In minutes
+
+[worker.connections]
+time_between_retries = 4
+max_retries = 10

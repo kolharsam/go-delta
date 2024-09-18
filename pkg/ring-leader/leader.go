@@ -69,7 +69,7 @@ type ringLeaderServer struct {
 	logger        *zap.Logger
 	leaderHost    string
 	leaderPort    uint32
-	appConfig     *config.TaskSchedulerConfig
+	appConfig     *config.DeltaConfig
 }
 
 type connectionRequest struct {
@@ -222,7 +222,7 @@ func (rls *ringLeaderServer) Connect(ctx context.Context, connReq *pb.ConnectReq
 	}, nil
 }
 
-func newServer(host string, port uint32, logger *zap.Logger, config *config.TaskSchedulerConfig) *ringLeaderServer {
+func newServer(host string, port uint32, logger *zap.Logger, config *config.DeltaConfig) *ringLeaderServer {
 	s := &ringLeaderServer{
 		activeServers: &taskWorkers{
 			workers: omap.NewOrderedMap[string, *taskWorkerInfo](),
@@ -235,7 +235,7 @@ func newServer(host string, port uint32, logger *zap.Logger, config *config.Task
 	return s
 }
 
-func GetListenerAndServer(host string, port uint32, config *config.TaskSchedulerConfig) (net.Listener, *grpc.Server, *ringLeaderServer, error) {
+func GetListenerAndServer(host string, port uint32, config *config.DeltaConfig) (net.Listener, *grpc.Server, *ringLeaderServer, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, nil, nil, err

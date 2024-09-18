@@ -7,7 +7,8 @@ import (
 )
 
 type BloomFilterConfig struct {
-	// TODO: add config for number of bytes of storage and number of hash functions that could be used
+	Bits             uint64 `json:"bits" toml:"bits"`
+	NumHashFunctions uint   `json:"num_hash_functions" toml:"num_hash_functions"`
 }
 
 type RingLeaderConfig struct {
@@ -25,15 +26,16 @@ type WorkerConfig struct {
 	Connections       ConnectionsConfig `json:"connections" toml:"connections"`
 }
 
-type TaskSchedulerConfig struct {
-	Title            string           `json:"title" toml:"title"`
-	RingLeaderConfig RingLeaderConfig `json:"ring_leader" toml:"ring-leader"`
-	WorkerConfig     WorkerConfig     `json:"worker" toml:"worker"`
+type DeltaConfig struct {
+	Title             string            `json:"title" toml:"title"`
+	RingLeaderConfig  RingLeaderConfig  `json:"ring_leader" toml:"ring-leader"`
+	WorkerConfig      WorkerConfig      `json:"worker" toml:"worker"`
+	BloomFilterConfig BloomFilterConfig `json:"bloom" toml:"bloom"`
 }
 
 var (
-	defaultConfig = &TaskSchedulerConfig{
-		Title: "task-scheduler",
+	defaultConfig = &DeltaConfig{
+		Title: "go-delta",
 		RingLeaderConfig: RingLeaderConfig{
 			Connections: ConnectionsConfig{
 				MaxRetries:         10,
@@ -48,16 +50,20 @@ var (
 				TimeBetweenRetries: 5,
 			},
 		},
+		BloomFilterConfig: BloomFilterConfig{
+			Bits:             1000,
+			NumHashFunctions: 3,
+		},
 	}
 )
 
-func ParseConfig(fileName string) (*TaskSchedulerConfig, error) {
+func ParseConfig(fileName string) (*DeltaConfig, error) {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		return defaultConfig, err
 	}
 
-	var config TaskSchedulerConfig
+	var config DeltaConfig
 
 	err = toml.Unmarshal(data, &config)
 	if err != nil {

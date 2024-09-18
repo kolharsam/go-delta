@@ -34,7 +34,7 @@ type workerContext struct {
 	leaderInfo          leaderInfo
 	isConnectedToLeader bool
 	mu                  sync.Mutex
-	appConfig           *config.TaskSchedulerConfig
+	appConfig           *config.DeltaConfig
 }
 
 func setupConnectionWithLeader(host string, port uint32) (pb.RingLeaderClient, error) {
@@ -156,7 +156,7 @@ func (wc *workerContext) HandleHeartbeats() {
 	}
 }
 
-func newServer(logger *zap.Logger, serviceId string, host string, port uint32, leaderHost string, leaderPort uint32, config *config.TaskSchedulerConfig) *workerContext {
+func newServer(logger *zap.Logger, serviceId string, host string, port uint32, leaderHost string, leaderPort uint32, config *config.DeltaConfig) *workerContext {
 	return &workerContext{
 		logger:              logger,
 		serviceId:           serviceId,
@@ -168,7 +168,7 @@ func newServer(logger *zap.Logger, serviceId string, host string, port uint32, l
 	}
 }
 
-func GetListenerAndServer(host string, port uint32, ringLeaderHost string, ringLeaderPort uint32, config *config.TaskSchedulerConfig) (net.Listener, *grpc.Server, *workerContext, error) {
+func GetListenerAndServer(host string, port uint32, ringLeaderHost string, ringLeaderPort uint32, config *config.DeltaConfig) (net.Listener, *grpc.Server, *workerContext, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, nil, nil, err
