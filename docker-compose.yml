@@ -1,0 +1,41 @@
+volumes:
+  postgres_data:
+
+services:
+  bloom:
+    build:
+      context: .
+      dockerfile: bloom_dockerfile
+    ports:
+      - "8082:8082"
+
+  ring_leader:
+    build:
+      context: .
+      dockerfile: ring_leader_dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      bloom:
+        condition: service_started
+    # networks:
+    #   - task_network
+    # # healthcheck:
+    # #   test: ["CMD", "nc", "-z", "ring_leader", "8081"]
+    # #   interval: 10s
+    # #   timeout: 5s
+    # #   retries: 5
+
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: worker_dockerfile
+  #   environment:
+  #     # WORKER_ADDRESS: worker
+  #     RING_LEADER_HOST: ring_leader
+  #     RING_LEADER_PORT: 8081
+  #   depends_on:
+  #     ring_leader:
+  #       condition: service_started
+  #   networks:
+  #     - task_network
