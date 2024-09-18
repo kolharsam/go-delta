@@ -1,0 +1,245 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/kolharsam/go-delta/pkg/grpc";
+
+service BloomFilter {
+    rpc AddKey(AddKeyRequest) returns (AddKeyAck){}
+    rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyAck){}
+    rpc CheckKey(CheckKeyRequest) returns (CheckKeyResponse){}
+}
+
+service RingLeader {
+    // Worker specific methods
+    rpc Connect(ConnectRequest) returns (ConnectAck){}
+    rpc Hearbeat(stream HeartbeatFromWorker) returns (stream HeartbeatFromLeader){}
+    rpc Alert(AlertRequest) returns (AlertAck) {}
+    
+    // CLI commands - primitive data types (bool, float, strings, int)
+    rpc Get(GetRequest) returns (GetResponse){}
+    rpc Store(StoreRequest) returns (StoreAck) {}
+    rpc Remove(RemoveRequest) returns (RemoveAck){}
+
+    // CLI commands - specific to blobs
+    rpc BlobGet(BlobGetRequest) returns (stream BlobGetResponse){}
+    rpc BlobStore(stream BlobStoreRequest) returns (BlobStoreAck){}
+    rpc BlobRemove(RemoveRequest) returns (stream BlobRemoveAck){}
+}
+
+service Worker {
+    rpc Persist(PersistRequest) returns (stream PersistUpdate){}
+    rpc HeartbeatWithWorker(stream WorkerBeat) returns (stream WorkerBeat) {}
+    rpc ConnectWithWorker(WorkerConnectRequest) returns (WorkerConnectAck){}
+}
+
+message RemoveAck {
+    bool key_present = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    optional uint32 version_removed = 3;
+    ErrorCode error_code = 4;
+    optional string error_details = 5;
+}
+
+message BlobGetRequest {
+    string key = 1;
+    optional uint32 expected_version = 3;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message AddKeyRequest {
+    string key = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    optional uint32 version = 3;
+}
+
+message AddKeyAck {
+    ErrorCode error_code = 1;
+    optional string error_details = 3;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message RemoveKeyRequest {
+    string key = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message RemoveKeyAck {
+    ErrorCode error_code = 1;
+    optional string error_details = 3;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message CheckKeyRequest {
+    string key = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message CheckKeyResponse {
+    ErrorCode error_code = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    optional float false_positive_probability = 3;
+}
+
+enum ErrorCode {
+    OK = 0;                     // No error
+    NOT_FOUND = 1;              // Key not found
+    INVALID_KEY = 2;            // Key format is invalid
+    UNAUTHORIZED = 3;           // Authorization failure
+    INTERNAL_ERROR = 4;         // Generic server error
+    REPLICATION_FAILURE = 5;    // Error during replication
+    TIMESTAMP_CONFLICT = 6;     // Conflict with versioning
+}
+
+message GetRequest {
+    string key = 1;
+    optional uint32 expected_version = 3;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message GetResponse {
+    google.protobuf.Timestamp timestamp = 1;
+    bool key_present = 2;
+    optional uint32 current_version = 7;
+    oneof value {   
+        float float_value = 3;
+        int64 int_value = 4;
+        bool bool_value = 5;
+        string str_value = 6;
+    }
+}
+
+message BlobGetResponse {
+    bool key_present = 1;
+    uint32 current_version = 4;
+    google.protobuf.Timestamp timestamp = 2;
+    bytes chunk = 3;
+}
+
+message RemoveRequest {
+    string key = 1;
+    uint32 version = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message BlobRemoveAck {
+    bool key_present = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    oneof key_removal_status {
+        bool key_removed = 3;
+        bool key_being_removed = 4;
+    }
+    ErrorCode error_code = 5;
+}
+
+message AlertRequest {
+    string host_id = 1;
+    uint32 port = 2;
+    string linked_host = 3;
+    uint32 linked_port = 4;
+    string service_id = 5;
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+message AlertAck {
+    string new_linked_host = 1;
+    uint32 new_linked_port = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message StoreRequest {
+    string key = 1;
+    uint32 version = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message BlobStoreRequest {
+    string key = 1;
+    bytes chunk = 2;
+    string file_type = 4;
+    optional uint32 version = 5;
+    google.protobuf.Timestamp timestamp = 3;
+    optional uint32 chunk_number = 6;
+};
+
+message StoreAck {
+    string key = 1;
+    optional uint32 current_version = 5;
+    google.protobuf.Timestamp timestamp = 2;
+    ErrorCode error_code = 3;
+    string error_details = 4;
+}
+
+message BlobStoreAck {
+    string key = 1;
+    uint32 size = 2;
+    optional uint32 current_version = 6;
+    google.protobuf.Timestamp timestamp = 3;
+    ErrorCode error_code = 4;
+    string error_details = 5;
+}
+
+message WorkerConnectRequest {
+    string host = 1;
+    uint32 port = 2;
+    string service_id = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+message WorkerConnectAck {
+    google.protobuf.Timestamp timestamp = 1;
+}
+
+message WorkerBeat {
+    string service_id = 1;
+    string port = 2;
+    string node_type = 3; // NOTE: either it is 'HEAD'/'LINK'/'TAIL'
+    google.protobuf.Timestamp beat_time = 4;
+}
+
+message ConnectRequest {
+    string service_id = 1;
+    string service_host = 2;
+    uint32 port = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}
+
+message ConnectAck {
+    string host = 1;
+    uint32 port = 2;
+    google.protobuf.Timestamp timestamp = 3;
+    WorkerIdentity identity = 4;
+}
+
+message WorkerIdentity {
+    string node_type = 1;
+    // ^ NOTE: one of 'HEAD', 'LINK' and 'TAIL'
+    string next_worker_host = 2;
+    uint32 next_worker_port = 3;
+}
+
+message PersistRequest {
+    string file_name = 1;
+    bytes file = 2;
+    google.protobuf.Timestamp time_stamp = 3;
+}
+
+message PersistUpdate {
+    optional uint32 bytes_persisted = 3;
+    string persist_status = 1;
+    google.protobuf.Timestamp time_stamp = 2;
+    // ^ one of "IN_PROCESS" | "DONE" 
+}
+
+message HeartbeatFromWorker {
+    string service_id = 1;
+    string host = 2;
+    uint32 port = 3;
+    google.protobuf.Timestamp timestamp = 4;
+};
+
+message HeartbeatFromLeader {
+    uint32 port = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    string host = 3;
+};
