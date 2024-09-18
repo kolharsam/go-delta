@@ -1,0 +1,109 @@
+Notes from here: https://www.inanzzz.com/index.php/post/152g/transferring-files-with-grpc-client-side-streams-using-golang
+
+func (g *FileServiceServer) Upload(stream uploadpb.FileService_UploadServer) error {
+	file := NewFile()
+	var fileSize uint32
+	fileSize = 0
+	defer func() {
+		if err := file.OutputFile.Close(); err != nil {
+			g.l.Error(err)
+		}
+	}()
+	for {
+		req, err := stream.Recv()
+		if file.FilePath == "" {
+			file.SetFile(req.GetFileName(), g.cfg.FilesStorage.Location)
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return g.logError(status.Error(codes.Internal, err.Error()))
+		}
+		chunk := req.GetChunk()
+		fileSize += uint32(len(chunk))
+		g.l.Debug("received a chunk with size: %d", fileSize)
+		if err := file.Write(chunk); err != nil {
+			return g.logError(status.Error(codes.Internal, err.Error()))
+		}
+	}
+	fileName := filepath.Base(file.FilePath)
+	g.l.Debug("saved file: %s, size: %d", fileName, fileSize)
+	return stream.SendAndClose(&uploadpb.FileUploadResponse{FileName: fileName, Size: fileSize})
+}
+
+type File struct {
+	FilePath   string
+	buffer     *bytes.Buffer
+	OutputFile *os.File
+}
+
+func (f *File) SetFile(fileName, path string) error {
+	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	f.FilePath = filepath.Join(path, fileName)
+	file, err := os.Create(f.FilePath)
+	if err != nil {
+		return err
+	}
+	f.OutputFile = file
+	return nil
+}
+
+func (f *File) Write(chunk []byte) error {
+	if f.OutputFile == nil {
+		return nil
+	}
+	_, err := f.OutputFile.Write(chunk)
+	return err
+}
+
+func (f *File) Close() error {
+	return f.OutputFile.Close()
+}
+
+type ClientService struct {
+	addr      string
+	filePath  string
+	batchSize int
+	client    uploadpb.FileServiceClient
+}
+
+func (s *ClientService) upload(ctx context.Context, cancel context.CancelFunc) error {
+	stream, err := s.client.Upload(ctx)
+	if err != nil {
+		return err
+	}
+	file, err := os.Open(s.filePath)
+	if err != nil {
+		return err
+	}
+	buf := make([]byte, s.batchSize)
+	batchNumber := 1
+	for {
+		num, err := file.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		chunk := buf[:num]
+
+		if err := stream.Send(&uploadpb.FileUploadRequest{FileName: s.filePath, Chunk: chunk}); err != nil {
+			return err
+		}
+		log.Printf("Sent - batch #%v - size - %v\n", batchNumber, len(chunk))
+		batchNumber += 1
+
+	}
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+	log.Printf("Sent - %v bytes - %s\n", res.GetSize(), res.GetFileName())
+	cancel()
+	return nil
+}
