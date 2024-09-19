@@ -7,8 +7,11 @@ import (
 )
 
 type BloomFilterConfig struct {
-	Bits             uint64 `json:"bits" toml:"bits"`
-	NumHashFunctions uint   `json:"num_hash_functions" toml:"num_hash_functions"`
+	FilterSize uint64 `json:"filter_size" toml:"filter_size"`
+	// NOTE: always represented as the number of bits
+	NumHashFunctions uint `json:"num_hash_functions" toml:"num_hash_functions"`
+	// NOTE: minimum for this ^ config is 3 and the max that will be supported at first is 5
+	Entropy uint8
 }
 
 type RingLeaderConfig struct {
@@ -51,8 +54,9 @@ var (
 			},
 		},
 		BloomFilterConfig: BloomFilterConfig{
-			Bits:             1000,
+			FilterSize:       1000,
 			NumHashFunctions: 3,
+			Entropy:          8,
 		},
 	}
 )
