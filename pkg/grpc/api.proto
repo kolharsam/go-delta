@@ -5,9 +5,9 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/kolharsam/go-delta/pkg/grpc";
 
 service BloomFilter {
-    rpc AddKey(AddKeyRequest) returns (AddKeyAck){}
-    rpc RemoveKey(RemoveKeyRequest) returns (RemoveKeyAck){}
-    rpc CheckKey(CheckKeyRequest) returns (CheckKeyResponse){}
+    rpc Add(AddKeyRequest) returns (AddKeyAck){}
+    rpc Remove(RemoveKeyRequest) returns (RemoveKeyAck){}
+    rpc Check(CheckKeyRequest) returns (CheckKeyResponse){}
 }
 
 service RingLeader {
