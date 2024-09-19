@@ -53,6 +53,29 @@ func TestSetNWithError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestGetN(t *testing.T) {
+	b := New(100)
+	err := b.SetN(10, 20, 30, 45)
+
+	assert.Nil(t, err)
+	checkGetValue(t, b, 10, true)
+	checkGetValue(t, b, 20, true)
+	checkGetValue(t, b, 30, true)
+	checkGetValue(t, b, 45, true)
+
+	present, err := b.GetN(10, 20, 30)
+	assert.Nil(t, err)
+	assert.True(t, present)
+
+	present, err = b.GetN(20, 30, 34)
+	assert.Nil(t, err)
+	assert.False(t, present)
+
+	present, err = b.GetN(20, 30, 900)
+	assert.NotNil(t, err)
+	assert.False(t, present)
+}
+
 func TestRemove(t *testing.T) {
 	b := New(100)
 	b.Set(50)
