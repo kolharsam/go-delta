@@ -73,6 +73,18 @@ func (b *Bitset) Remove(pos uint64) error {
 	return nil
 }
 
+// RemoveN unsets `n` number of positions in the bitset
+func (b *Bitset) RemoveN(npos ...uint64) error {
+	for i := 0; i < len(npos); i++ {
+		err := b.Remove(npos[i])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Get returns true if the bit at the given position is 1
 func (b *Bitset) Get(pos uint64) (bool, error) {
 	if pos > b.size {

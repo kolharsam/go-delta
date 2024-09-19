@@ -69,6 +69,25 @@ func TestRemove(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestRemoveN(t *testing.T) {
+	b := New(100)
+	b.Set(50)
+	b.Set(55)
+
+	checkGetValue(t, b, 50, true)
+	checkGetValue(t, b, 51, false)
+	checkGetValue(t, b, 55, true)
+
+	b.RemoveN(50, 55)
+
+	checkGetValue(t, b, 50, false)
+	checkGetValue(t, b, 51, false)
+	checkGetValue(t, b, 55, false)
+
+	err := b.RemoveN(908008, 2323)
+	assert.NotNil(t, err)
+}
+
 func TestCount(t *testing.T) {
 	b := New(100)
 
