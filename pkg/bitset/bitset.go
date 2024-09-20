@@ -100,17 +100,17 @@ func (b *Bitset) Get(pos uint64) (bool, error) {
 // GetN helps check whether `n` positions
 // of interest are set to 1 in the bitset
 func (b *Bitset) GetN(npos ...uint64) (bool, error) {
+	var finalRes bool
+
 	for i := 0; i < len(npos); i++ {
 		res, err := b.Get(npos[i])
 		if err != nil {
 			return false, err
 		}
-		if !res {
-			return false, nil
-		}
+		finalRes = finalRes || res
 	}
 
-	return true, nil
+	return finalRes, nil
 }
 
 // Count returns the number of bits set to 1 in the entire Bitset

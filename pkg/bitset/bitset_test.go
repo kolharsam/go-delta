@@ -69,11 +69,10 @@ func TestGetN(t *testing.T) {
 
 	present, err = b.GetN(20, 30, 34)
 	assert.Nil(t, err)
-	assert.False(t, present)
+	assert.True(t, present)
 
-	present, err = b.GetN(20, 30, 900)
+	_, err = b.GetN(20, 30, 900)
 	assert.NotNil(t, err)
-	assert.False(t, present)
 }
 
 func TestRemove(t *testing.T) {
