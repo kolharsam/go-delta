@@ -8,6 +8,8 @@ service BloomFilter {
     rpc Add(AddKeyRequest) returns (AddKeyAck){}
     rpc Remove(RemoveKeyRequest) returns (RemoveKeyAck){}
     rpc Check(CheckKeyRequest) returns (CheckKeyResponse){}
+    rpc Capacity(EmptyRequest) returns (CapacityResponse){}
+    rpc Reset(EmptyRequest) returns (ResetResponse){}
 }
 
 service RingLeader {
@@ -31,6 +33,21 @@ service Worker {
     rpc Persist(PersistRequest) returns (stream PersistUpdate){}
     rpc HeartbeatWithWorker(stream WorkerBeat) returns (stream WorkerBeat) {}
     rpc ConnectWithWorker(WorkerConnectRequest) returns (WorkerConnectAck){}
+}
+
+message EmptyRequest {
+    google.protobuf.Timestamp timestamp = 1;
+}
+
+message CapacityResponse {
+    float capacity = 1;
+    string capacity_percentage = 2;
+    google.protobuf.Timestamp timestamp = 3;
+}
+
+message ResetResponse {
+    ErrorCode code = 1;
+    google.protobuf.Timestamp timestamp = 2;
 }
 
 message RemoveAck {

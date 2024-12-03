@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 
+	"github.com/joho/godotenv"
 	"github.com/kolharsam/go-delta/pkg/config"
 	ringLeader "github.com/kolharsam/go-delta/pkg/ring-leader"
 )
@@ -14,9 +15,12 @@ var (
 	configFile = flag.String("config", "config.toml", "--config ../../<path-to-config>")
 )
 
+func init() {
+	godotenv.Load()
+}
+
 func main() {
 	flag.Parse()
-
 	appConfig, err := config.ParseConfig(*configFile)
 
 	if err != nil && appConfig != nil {

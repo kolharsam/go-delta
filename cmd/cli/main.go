@@ -2,23 +2,14 @@ package main
 
 import (
 	"flag"
-	"log"
 
-	"github.com/joho/godotenv"
+	cmd "github.com/kolharsam/go-delta/pkg/cli"
 )
 
 var (
-	port = flag.String("port", "8080", "--port 8080")
+	port = flag.Uint("port", 8082, "--port 8082")
 )
 
 func main() {
-	err := godotenv.Load()
-	flag.Parse()
-	if err != nil {
-		log.Fatalf("failed to set up environment variables [%v]", err)
-	}
-
-	// serverPort := lib.MakePortString(*port)
-
-	// schedulerapi.Run(serverPort)
+	cmd.Execute(*port)
 }

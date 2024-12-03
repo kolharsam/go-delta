@@ -1,13 +1,16 @@
 package bloom
 
 import (
+	"math/big"
+
 	"github.com/kolharsam/go-delta/pkg/bitset"
 	"github.com/kolharsam/go-delta/pkg/hash"
 )
 
 type Bloom struct {
-	bitset *bitset.Bitset
-	hash   *hash.Hash
+	bitset     *bitset.Bitset
+	hash       *hash.Hash
+	filterSize uint64
 }
 
 func New(filterSize uint64, numHashFunctions uint8, entropy uint8) (*Bloom, error) {
@@ -19,8 +22,9 @@ func New(filterSize uint64, numHashFunctions uint8, entropy uint8) (*Bloom, erro
 	}
 
 	return &Bloom{
-		bitset: bitset,
-		hash:   hashFunctions,
+		bitset:     bitset,
+		hash:       hashFunctions,
+		filterSize: filterSize,
 	}, nil
 }
 
@@ -64,4 +68,22 @@ func (b *Bloom) RemoveKey(key []byte) error {
 	}
 
 	return nil
+}
+
+func (b *Bloom) Capacity() (float64, string, error) {
+	ones := b.bitset.Count()
+
+	onesFloat := big.NewFloat(float64(ones))
+	sizeFloat := big.NewFloat(float64(b.filterSize))
+
+	cp := new(big.Float).Quo(onesFloat, sizeFloat)
+	cap, _ := cp.SetPrec(6).Float64()
+
+	capacityPercentage := new(big.Float).Mul(cp, big.NewFloat(100)).SetPrec(2)
+
+	return cap, capacityPercentage.String(), nil
+}
+
+func (b *Bloom) Reset() {
+	b.bitset.Reset()
 }

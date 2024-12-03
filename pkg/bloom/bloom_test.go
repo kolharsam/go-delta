@@ -66,3 +66,33 @@ func TestRemoveKey(t *testing.T) {
 	err = b.RemoveKey(TEST_FALSE_KEY)
 	assert.Nil(t, err)
 }
+
+func TestCapacity(t *testing.T) {
+	b, err := New(32, 3, 8)
+	assert.Nil(t, err)
+	assert.NotNil(t, b)
+
+	err = b.AddKey(TEST_FALSE_KEY)
+	assert.Nil(t, err)
+	err = b.AddKey(TEST_KEY)
+	assert.Nil(t, err)
+
+	cap, capString, err := b.Capacity()
+	assert.Nil(t, err)
+	t.Log(cap, capString)
+}
+
+func TestReset(t *testing.T) {
+	b, err := New(STD_FILTER_SIZE, STD_NUM_HASH_FUNCTIONS, STD_ENTROPY)
+	assert.Nil(t, err)
+	assert.NotNil(t, b)
+
+	err = b.AddKey(TEST_KEY)
+	assert.Nil(t, err)
+
+	assert.Equal(t, uint64(3), b.bitset.Count())
+
+	b.Reset()
+
+	assert.Equal(t, uint64(0), b.bitset.Count())
+}
